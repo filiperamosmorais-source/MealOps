@@ -6,14 +6,19 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  role      UserRole @default(USER)
   createdAt DateTime @default(now())
-
-  recipes Recipe[]
-  plans   MealPlan[]
+  recipes   Recipe[]
+  plans     MealPlan[]
 }
 
 model Ingredient {

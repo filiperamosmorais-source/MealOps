@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
 	Alert,
@@ -18,10 +18,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = 'http://localhost:3001';
-
-// TEMP: replace with your real demo user id (the one you created in seed)
-const DEMO_USER_ID = 'cml9mwizd0000mgvlsrxyii1v';
+import { apiFetch } from '../lib/api';
 
 type Ingredient = {
 	id: string;
@@ -34,28 +31,22 @@ type Ingredient = {
 
 type RecipeItemInput = { ingredientId: string; quantityG: number };
 
-async function fetchIngredients(): Promise<Ingredient[]> {
-	const res = await fetch(`${API_BASE}/ingredients`);
-	if (!res.ok) throw new Error(`Failed to fetch ingredients (${res.status})`);
-	return res.json();
-}
-
-async function createRecipe(payload: {
-	userId: string;
+type CreateRecipePayload = {
 	name: string;
 	servings: number;
+	notes?: string;
 	items: RecipeItemInput[];
-}) {
-	const res = await fetch(`${API_BASE}/recipes`, {
+};
+
+async function fetchIngredients(): Promise<Ingredient[]> {
+	return apiFetch<Ingredient[]>('/ingredients');
+}
+
+async function createRecipe(payload: CreateRecipePayload) {
+	return apiFetch('/recipes', {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(payload),
 	});
-	if (!res.ok) {
-		const txt = await res.text().catch(() => '');
-		throw new Error(`Failed to create recipe (${res.status}): ${txt || res.statusText}`);
-	}
-	return res.json();
 }
 
 export default function RecipeCreate() {
@@ -69,10 +60,9 @@ export default function RecipeCreate() {
 
 	const [name, setName] = useState('');
 	const [servings, setServings] = useState<number>(2);
-
+	const [description, setDescription] = useState('');
 	const [selectedIngredientId, setSelectedIngredientId] = useState('');
 	const [quantityG, setQuantityG] = useState<number>(100);
-
 	const [items, setItems] = useState<RecipeItemInput[]>([]);
 
 	const ingredientById = useMemo(() => {
@@ -114,9 +104,9 @@ export default function RecipeCreate() {
 		if (items.length === 0) return;
 
 		mutation.mutate({
-			userId: DEMO_USER_ID,
 			name: name.trim(),
 			servings,
+			notes: description.trim() || undefined,
 			items,
 		});
 	};
@@ -151,6 +141,14 @@ export default function RecipeCreate() {
 							inputProps={{ min: 1 }}
 							sx={{ width: 180 }}
 						/>
+						<TextField
+							label="How to make it (optional)"
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							multiline
+							minRows={4}
+							fullWidth
+						/>
 
 						<Divider />
 
@@ -182,7 +180,11 @@ export default function RecipeCreate() {
 								sx={{ width: 180 }}
 							/>
 
-							<Button variant="contained" onClick={addItem} disabled={!selectedIngredientId || quantityG <= 0}>
+							<Button
+								variant="contained"
+								onClick={addItem}
+								disabled={!selectedIngredientId || quantityG <= 0}
+							>
 								Add
 							</Button>
 						</Stack>
@@ -237,16 +239,12 @@ export default function RecipeCreate() {
 								onClick={submit}
 								disabled={mutation.isPending || !name.trim() || servings < 1 || items.length === 0}
 							>
-								{mutation.isPending ? 'Creating…' : 'Create recipe'}
+								{mutation.isPending ? 'Creating...' : 'Create recipe'}
 							</Button>
 						</Stack>
 					</Stack>
 				</CardContent>
 			</Card>
-
-			<Alert severity="warning">
-				You’re using a hardcoded DEMO_USER_ID in the UI. Next step is adding login and storing the userId from auth.
-			</Alert>
 		</Stack>
 	);
 }

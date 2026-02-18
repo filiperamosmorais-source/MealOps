@@ -1,15 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import {
-	Alert,
-	Box,
-	Card,
-	CardContent,
-	CircularProgress,
-	Stack,
-	Typography,
-} from '@mui/material';
+﻿import { useQuery } from '@tanstack/react-query';
+import { Alert, Box, Card, CardContent, CircularProgress, Stack, Typography } from '@mui/material';
 
-const API_BASE = 'http://localhost:3001';
+import { apiFetch } from '../lib/api';
 
 type Nutrition = { kcal: number; protein: number; carbs: number; fat: number };
 
@@ -17,6 +9,7 @@ type RecipeListItem = {
 	id: string;
 	name: string;
 	servings: number;
+	notes?: string | null;
 	createdAt: string;
 	nutrition: {
 		total: Nutrition;
@@ -25,9 +18,7 @@ type RecipeListItem = {
 };
 
 async function fetchRecipes(): Promise<RecipeListItem[]> {
-	const res = await fetch(`${API_BASE}/recipes`);
-	if (!res.ok) throw new Error(`Failed to fetch recipes (${res.status})`);
-	return res.json();
+	return apiFetch<RecipeListItem[]>('/recipes');
 }
 
 export default function RecipesList() {
@@ -62,23 +53,31 @@ export default function RecipesList() {
 						<Stack spacing={1}>
 							<Typography variant="h6">{r.name}</Typography>
 							<Typography variant="body2" color="text.secondary">
-								Servings: {r.servings} • Created: {new Date(r.createdAt).toLocaleString()}
+								Servings: {r.servings} - Created: {new Date(r.createdAt).toLocaleString()}
 							</Typography>
+							{r.notes ? (
+								<Box>
+									<Typography variant="subtitle2">Description</Typography>
+									<Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+										{r.notes}
+									</Typography>
+								</Box>
+							) : null}
 
 							<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
 								<Box>
 									<Typography variant="subtitle2">Total</Typography>
 									<Typography variant="body2">
-										{k(r.nutrition.total.kcal)} kcal • P {k(r.nutrition.total.protein)} • C{' '}
-										{k(r.nutrition.total.carbs)} • F {k(r.nutrition.total.fat)}
+										{k(r.nutrition.total.kcal)} kcal - P {k(r.nutrition.total.protein)} - C{' '}
+										{k(r.nutrition.total.carbs)} - F {k(r.nutrition.total.fat)}
 									</Typography>
 								</Box>
 
 								<Box>
 									<Typography variant="subtitle2">Per serving</Typography>
 									<Typography variant="body2">
-										{k(r.nutrition.perServing.kcal)} kcal • P {k(r.nutrition.perServing.protein)} • C{' '}
-										{k(r.nutrition.perServing.carbs)} • F {k(r.nutrition.perServing.fat)}
+										{k(r.nutrition.perServing.kcal)} kcal - P {k(r.nutrition.perServing.protein)}
+										- C {k(r.nutrition.perServing.carbs)} - F {k(r.nutrition.perServing.fat)}
 									</Typography>
 								</Box>
 							</Stack>
